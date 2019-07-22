@@ -17,9 +17,16 @@ app.listen(3000, function() {
 
 wss.on("connection", function(ws) {
   ws.on("message", function(message) {
-    // dovremmo usare _eval in modo tale da eseguire in sandbox
-    // dobbiamo pero' trovare un modo per importare la libreria robot
+    
+    
     // _eval(message);
+    
+    
+    // dovremmo usare _eval in modo tale da eseguire in sandbox
+    // ma al momento non ho trovato un modo per importare la libreria 
+    //robotjs all'interno della sandbox
+    console.log(`${message}`);
+    
     eval(message);
   });
 });
