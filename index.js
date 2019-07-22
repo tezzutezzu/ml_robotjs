@@ -12,7 +12,7 @@ app.get("/", function(req, res) {
   res.sendfile(__dirname + "/public/index.html");
 });
 app.listen(3000, function() {
-  console.log("Example app listening on port http://localhost:3000!");
+  console.log("Example app listening on port http://localhost:3000");
 });
 
 wss.on("connection", function(ws) {
