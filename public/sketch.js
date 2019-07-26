@@ -1,46 +1,58 @@
 const ws = new WebSocket("ws://localhost:40510");
 let sending = false;
 
-let codeB = `
-// Type "Hello World".
-robot.typeString("Hello World");
+let video;
+let poseNet;
+let poses = [];
 
-// Press enter.
-robot.keyTap("enter");
-`;
+function setup() {  
+  // sendMousePos(200,200)
 
-let codeA = `
+  createCanvas(window.innerWidth, window.innerHeight);
+  video = createCapture(VIDEO);
+  video.size(width, height);
 
-// Speed up the mouse.
-robot.setMouseDelay(2);
-
-var twoPI = Math.PI * 2.0;
-var screenSize = robot.getScreenSize();
-var height = (screenSize.height / 2) - 10;
-var width = screenSize.width;
-
-for (var x = 0; x < width; x++)
-{
-	y = height * Math.sin((twoPI * x) / width) + height;
-	robot.moveMouse(x, y);
-}
-
-`;
-
-function setup() {
-  createClassInput("classA", "test A", codeA);
-  createClassInput("classB", "test B", codeB);
-}
-
-function createClassInput(parent, label, value) {
-  const input = createElement("textarea").parent(parent);
-  input.size(200, 200);
-  input.value(value);
-  const br = createElement("br").parent(parent);
-  const button = createButton(label).parent(parent);
-  button.mousePressed(() => {
-    sendWSMessage(input.value());
+  // Create a new poseNet method with a single detection
+  poseNet = ml5.poseNet(video, modelReady);
+  // This sets up an event that fills the global variable "poses"
+  // with an array every time new poses are detected
+  poseNet.on('pose', function(results) {
+    poses = results;
   });
+  // Hide the video element, and just show the canvas
+  video.hide();  
+}
+
+function draw() {
+  image(video, 0, 0, 640, 480);
+
+  // We can call both functions to draw all keypoints and the skeletons
+  // drawKeypoints();
+  // drawSkeleton();
+
+  if (poses.length > 0) {
+    let nx = Math.floor(poses[0].pose.nose.x)
+    let ny = Math.floor(poses[0].pose.nose.y)
+
+    let fullX = (nx*window.innerWidth)/width
+    let fullY = (ny*window.innerHeight)/height
+    
+    sendMousePos(fullX, fullY)
+  }
+
+  noFill()
+  stroke(0,0,255)
+  strokeWeight(2)
+  line(mouseX, mouseY, pmouseX, pmouseY)
+}
+
+function sendMousePos(x, y) {
+  console.log('asdf')
+  // if (!sending) {
+    // sending = true;
+    ws.send("robot.moveMouseSmooth(" + x + "," + y + ");");
+    // setTimeout(() => (sending = false), 1000);
+  // }
 }
 
 function sendWSMessage(d) {
@@ -49,4 +61,42 @@ function sendWSMessage(d) {
     ws.send(d);
     setTimeout(() => (sending = false), 1000);
   }
+}
+
+// A function to draw ellipses over the detected keypoints
+function drawKeypoints()  {
+  // Loop through all the poses detected
+  for (let i = 0; i < poses.length; i++) {
+    // For each pose detected, loop through all the keypoints
+    let pose = poses[i].pose;
+    for (let j = 0; j < pose.keypoints.length; j++) {
+      // A keypoint is an object describing a body part (like rightArm or leftShoulder)
+      let keypoint = pose.keypoints[j];
+      // Only draw an ellipse is the pose probability is bigger than 0.2
+      if (keypoint.score > 0.2) {
+        fill(255, 0, 0);
+        noStroke();
+        ellipse(keypoint.position.x, keypoint.position.y, 10, 10);
+      }
+    }
+  }
+}
+
+// A function to draw the skeletons
+function drawSkeleton() {
+  // Loop through all the skeletons detected
+  for (let i = 0; i < poses.length; i++) {
+    let skeleton = poses[i].skeleton;
+    // For every skeleton, loop through all body connections
+    for (let j = 0; j < skeleton.length; j++) {
+      let partA = skeleton[j][0];
+      let partB = skeleton[j][1];
+      stroke(255, 0, 0);
+      line(partA.position.x, partA.position.y, partB.position.x, partB.position.y);
+    }
+  }
+}
+
+function modelReady() {
+  select('#status').html('Model Loaded');
 }

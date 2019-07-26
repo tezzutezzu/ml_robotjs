@@ -6,6 +6,14 @@ const wss = new WebSocketServer({ port: 40510 });
 const app = express();
 const robot = require("robotjs");
 
+// ROBOT VARIABLES
+robot.setMouseDelay(2);
+var twoPI = Math.PI * 2.0;
+var screenSize = robot.getScreenSize();
+var height = screenSize.height;
+var width = screenSize.width;
+
+
 app.use(express.static("public"));
 
 app.get("/", function(req, res) {
@@ -25,7 +33,7 @@ wss.on("connection", function(ws) {
     // dovremmo usare _eval in modo tale da eseguire in sandbox
     // ma al momento non ho trovato un modo per importare la libreria 
     //robotjs all'interno della sandbox
-    console.log(`${message}`);
+    // console.log(`${message}`);
     
     eval(message);
   });
